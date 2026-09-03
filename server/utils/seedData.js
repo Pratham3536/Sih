@@ -1,87 +1,116 @@
-/**
- * Mock Data for SIH 2026 Project: Problem Statement SIH26093
- * AI-Based Real-Time Stress and Trauma Assessment Module
- * National Helpline Against Atrocities (14566) & Integrated Portal
- */
+import { User } from "../models/User.js";
+import { Case } from "../models/Case.js";
+import { getMongoStatus } from "../config/mongoDb.js";
 
-export const DEMO_CASE = {
-  id: "NHAA-2026-001",
-  victimId: "VIC-84920 (Anonymized)",
-  date: "2026-09-01",
-  timestamp: "10:21 AM IST",
-  language: "Hindi",
-  inputType: "Voice",
-  audioFileName: "interaction_14566_nhaa_001.wav",
-  audioDuration: "00:48",
-  transcript: "वे मुझे और मेरे परिवार को लगातार धमकी दे रहे हैं। मैं बहुत डरी हुई हूँ और मुझे घर जाने में डर लग रहा है। मुझे नहीं पता कि मदद के लिए किससे संपर्क करूँ।",
-  transcriptEnglish: "They are constantly threatening me and my family. I am very scared and afraid to go home. I don't know who to contact for help.",
-  nlpResults: {
-    fear: 0.82,
-    threat: 0.88,
-    isolation: 0.65,
-    vulnerability: 0.84,
-    emotionalDistress: 0.78,
-    explanations: [
-      "Explicit threat-related keywords detected in linguistic stream ('धमकी', 'threats')",
-      "High fear & distress sentiment markers identified ('बहुत डरी हुई', 'scared')",
-      "Help-seeking & isolation pattern matched ('नहीं पता किससे संपर्क करूँ', 'uncertainty')"
+export const PRESET_USERS = [
+  {
+    email: "viewer@nhaa14566.gov.in",
+    password: "Password@123",
+    name: "Public & Grievance Observer",
+    role: "viewer",
+    roleTitle: "Helpline Assessment & Public Grievance Viewer",
+    department: "National Helpline 14566 - Grievance Monitoring & Analytics Cell",
+    badge: "Read-Only / Assessment Viewer",
+    permissions: [
+      "View Public Analytics & SVI Stats",
+      "Browse Helpline Assessments",
+      "Inspect Multimodal SVI Reports",
+      "Track Grievance Timelines"
     ]
   },
-  speechResults: {
-    pitchVariationHz: 245,
-    pitchElevated: true,
-    mfccMean: -18.4,
-    speechRateWpm: 185,
-    pauseFrequency: "High (12 pauses > 1.2s)",
-    tremorIndex: 0.74,
-    explanations: [
-      "Acoustic features indicate elevated fundamental pitch frequency (F0 variance)",
-      "Irregular pause duration and speech rate jitter detected by Librosa extraction"
+  {
+    email: "officer@nhaa14566.gov.in",
+    password: "Password@123",
+    name: "Rajeshwar Singh (IPS)",
+    role: "officer",
+    roleTitle: "District Nodal Protection & Police Enforcement Officer (MoSJE)",
+    department: "District Protection Cell & PoA Enforcement Directorate",
+    badge: "Gazetted Nodal Officer",
+    permissions: [
+      "Critical SVI Escalations & Triage",
+      "Police / FIR Dispatch Protocol",
+      "Emergency Protection Orders",
+      "Case Risk Override & Decision"
+    ]
+  }
+];
+
+export const INITIAL_DEMO_CASES = [
+  {
+    id: "NHAA-2026-001",
+    victimId: "VIC-84920 (Anonymized)",
+    date: "2026-09-01",
+    timestamp: "10:21 AM IST",
+    language: "Hindi",
+    inputType: "Voice",
+    audioFileName: "interaction_14566_nhaa_001.wav",
+    audioDuration: "00:48",
+    transcript: "वे मुझे और मेरे परिवार को लगातार धमकी दे रहे हैं। मैं बहुत डरी हुई हूँ और मुझे घर जाने में डर लग रहा है। मुझे नहीं पता कि मदद के लिए किससे संपर्क करूँ।",
+    transcriptEnglish: "They are constantly threatening me and my family. I am very scared and afraid to go home. I don't know who to contact for help.",
+    nlpResults: {
+      fear: 0.82,
+      threat: 0.88,
+      isolation: 0.65,
+      vulnerability: 0.84,
+      emotionalDistress: 0.78,
+      explanations: [
+        "Explicit threat-related keywords detected in linguistic stream ('धमकी', 'threats')",
+        "High fear & distress sentiment markers identified ('बहुत डरी हुई', 'scared')",
+        "Help-seeking & isolation pattern matched ('नहीं पता किससे संपर्क करूँ', 'uncertainty')"
+      ]
+    },
+    speechResults: {
+      pitchVariationHz: 245,
+      pitchElevated: true,
+      mfccMean: -18.4,
+      speechRateWpm: 185,
+      pauseFrequency: "High (12 pauses > 1.2s)",
+      tremorIndex: 0.74,
+      explanations: [
+        "Acoustic features indicate elevated fundamental pitch frequency (F0 variance)",
+        "Irregular pause duration and speech rate jitter detected by Librosa extraction"
+      ]
+    },
+    sviScore: 84,
+    riskLevel: "High",
+    status: "Pending Review",
+    recommendations: [
+      {
+        id: "rec-1",
+        title: "Immediate Safety Assessment",
+        type: "Safety",
+        description: "Dispatch local NHAA field liaison and contact nearest district nodal police unit for victim protection.",
+        urgency: "High"
+      },
+      {
+        id: "rec-2",
+        title: "Trauma Counselling Support",
+        type: "Counselling",
+        description: "Schedule immediate tele-counselling session with a certified trauma specialist on Helpline 14566.",
+        urgency: "High"
+      },
+      {
+        id: "rec-3",
+        title: "Legal Assistance & Free Aid",
+        type: "Legal",
+        description: "Connect complainant with State Legal Services Authority (SLSA) under PoA (Prevention of Atrocities) Act rules.",
+        urgency: "Medium"
+      }
+    ],
+    review: {
+      validatedBy: null,
+      reviewDate: null,
+      overriddenRisk: null,
+      notes: ""
+    },
+    timeline: [
+      { time: "10:21 AM", event: "Interaction received via NHAA 14566 Voice Helpline" },
+      { time: "10:22 AM", event: "Whisper ASR Speech-to-Text completed (Hindi detected)" },
+      { time: "10:22 AM", event: "Hugging Face Transformer NLP + Librosa feature extraction complete" },
+      { time: "10:23 AM", event: "Multimodal Fusion Engine generated SVI Score (84/100 - High Risk)" },
+      { time: "10:23 AM", event: "Case routed to Counsellor Review Queue" }
     ]
   },
-  sviScore: 84,
-  riskLevel: "High",
-  status: "Pending Review",
-  recommendations: [
-    {
-      id: "rec-1",
-      title: "Immediate Safety Assessment",
-      type: "Safety",
-      description: "Dispatch local NHAA field liaison and contact nearest district nodal police unit for victim protection.",
-      urgency: "High"
-    },
-    {
-      id: "rec-2",
-      title: "Trauma Counselling Support",
-      type: "Counselling",
-      description: "Schedule immediate tele-counselling session with a certified trauma specialist on Helpline 14566.",
-      urgency: "High"
-    },
-    {
-      id: "rec-3",
-      title: "Legal Assistance & Free Aid",
-      type: "Legal",
-      description: "Connect complainant with State Legal Services Authority (SLSA) under PoA (Prevention of Atrocities) Act rules.",
-      urgency: "Medium"
-    }
-  ],
-  review: {
-    validatedBy: null,
-    reviewDate: null,
-    overriddenRisk: null,
-    notes: ""
-  },
-  timeline: [
-    { time: "10:21 AM", event: "Interaction received via NHAA 14566 Voice Helpline" },
-    { time: "10:22 AM", event: "Whisper ASR Speech-to-Text completed (Hindi detected)" },
-    { time: "10:22 AM", event: "Hugging Face Transformer NLP + Librosa feature extraction complete" },
-    { time: "10:23 AM", event: "Multimodal Fusion Engine generated SVI Score (84/100 - High Risk)" },
-    { time: "10:23 AM", event: "Case routed to Counsellor Review Queue" }
-  ]
-};
-
-export const INITIAL_CASES = [
-  DEMO_CASE,
   {
     id: "NHAA-2026-002",
     victimId: "VIC-91024 (Anonymized)",
@@ -216,44 +245,25 @@ export const INITIAL_CASES = [
   }
 ];
 
-export const MOCK_USER_ROLES = [
-  {
-    id: "viewer",
-    role: "viewer",
-    name: "Assessment Viewer",
-    title: "Helpline Assessment & Public Grievance Viewer",
-    officialName: "Public & Grievance Observer",
-    email: "viewer@nhaa14566.gov.in",
-    demoPassword: "Password@123",
-    department: "National Helpline 14566 - Grievance Monitoring & Analytics Cell",
-    badge: "Read-Only / Assessment Viewer",
-    color: "blue",
-    description: "Access public assessment portal, inspect AI Stress Vulnerability Index (SVI) score breakdowns, track helpline grievance metrics, and review stress transcripts.",
-    permissions: [
-      "View Public Analytics & SVI Stats",
-      "Browse Helpline Assessments",
-      "Inspect Multimodal SVI Reports",
-      "Track Grievance Timelines"
-    ]
-  },
-  {
-    id: "officer",
-    role: "officer",
-    name: "District Protection Officer",
-    title: "District Nodal Protection & Police Enforcement Officer (MoSJE)",
-    officialName: "Shri Rajeshwar Singh (IPS)",
-    email: "officer@nhaa14566.gov.in",
-    demoPassword: "Password@123",
-    department: "District Protection Cell & PoA Enforcement Directorate",
-    badge: "Gazetted Nodal Officer",
-    color: "amber",
-    description: "Receives real-time SVI Critical/High alerts, coordinates emergency police field response, validates victim trauma assessments, and issues PoA statutory protection orders.",
-    permissions: [
-      "Critical SVI Escalations & Triage",
-      "Police / FIR Dispatch Protocol",
-      "Emergency Protection Orders",
-      "Case Risk Override & Decision"
-    ]
-  }
-];
+export const autoSeedDatabase = async () => {
+  const mongoStatus = getMongoStatus();
+  if (!mongoStatus.isConnected) return;
 
+  try {
+    // Seed Users
+    for (const u of PRESET_USERS) {
+      const exists = await User.findOne({ email: u.email });
+      if (!exists) {
+        await User.create(u);
+      }
+    }
+
+    // Seed Cases
+    const caseCount = await Case.countDocuments();
+    if (caseCount === 0) {
+      await Case.insertMany(INITIAL_DEMO_CASES);
+    }
+  } catch (err) {
+    console.warn("[Seed Utility Warning]:", err.message);
+  }
+};

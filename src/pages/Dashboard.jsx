@@ -54,10 +54,10 @@ export const Dashboard = ({ onNavigate, onSelectCase, onRunDemo }) => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold text-slate-900">
-              Counsellor & Officer Dashboard
+              Helpline Assessment & Officer Dashboard
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full">
-              {user?.roleTitle || "Trauma Counsellor"}
+              {user?.roleTitle || (user?.role === "officer" ? "District Protection Officer" : "Assessment Viewer")}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">

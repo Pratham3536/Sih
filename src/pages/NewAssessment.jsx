@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, Mic, Upload, Square, Play, Sparkles, Languages, Volume2, Info, ArrowRight } from "lucide-react";
+import { FileText, Mic, Upload, Square, Play, Sparkles, Languages, Volume2, Info, ArrowRight, ArrowLeft } from "lucide-react";
 import { analyzeText } from "../services/nlpService";
 import { processAudioInteraction } from "../services/speechService";
 import { calculateSVI } from "../services/sviService";
@@ -7,7 +7,7 @@ import { getRecommendations } from "../services/recommendationService";
 import { useCases } from "../context/CaseContext";
 import { ProcessingOverlay } from "../components/ProcessingOverlay";
 
-export const NewAssessment = ({ onCompleteAssessment }) => {
+export const NewAssessment = ({ onCompleteAssessment, onBack }) => {
   const { addCase } = useCases();
   const [inputMode, setInputMode] = useState("text"); // "text" | "voice"
   const [language, setLanguage] = useState("Hindi");
@@ -116,6 +116,15 @@ export const NewAssessment = ({ onCompleteAssessment }) => {
       {/* Header */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex items-center justify-between">
         <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 mb-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Dashboard</span>
+            </button>
+          )}
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             New Vulnerability Assessment
             <span className="text-xs font-semibold px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-full">

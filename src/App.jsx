@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CaseProvider, useCases } from "./context/CaseContext";
 import { Navbar } from "./components/Navbar";
@@ -13,7 +13,41 @@ import { Settings } from "./pages/Settings";
 const MainAppContent = () => {
   const { isAuthenticated } = useAuth();
   const { activeCase, setActiveCase, cases, loadDemoCase } = useCases();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace("#", "");
+    return hash || "dashboard";
+  });
+
+  // Keep state synchronized with browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.tab) {
+        setActiveTab(e.state.tab);
+      } else {
+        const hash = window.location.hash.replace("#", "");
+        setActiveTab(hash || "dashboard");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (tab, pushHistory = true) => {
+    setActiveTab(tab);
+    if (pushHistory) {
+      window.history.pushState({ tab }, "", "#" + tab);
+    }
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      navigateTo("dashboard");
+    }
+  };
 
   if (!isAuthenticated) {
     return <Login />;
@@ -21,32 +55,34 @@ const MainAppContent = () => {
 
   const handleSelectCase = (caseObj) => {
     setActiveCase(caseObj);
-    setActiveTab("case-details");
+    navigateTo("case-details");
   };
 
   const handleCompleteAssessment = (createdCase) => {
     setActiveCase(createdCase);
-    setActiveTab("assessment-result");
+    navigateTo("assessment-result");
   };
 
   const handleRunDemo = () => {
     const demo = loadDemoCase();
     setActiveCase(demo);
-    setActiveTab("assessment-result");
+    navigateTo("assessment-result");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={navigateTo}
+        onBack={handleBack}
+        canGoBack={activeTab !== "dashboard"}
         onRunDemo={handleRunDemo}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === "dashboard" && (
           <Dashboard
-            onNavigate={(tab) => setActiveTab(tab)}
+            onNavigate={(tab) => navigateTo(tab)}
             onSelectCase={handleSelectCase}
             onRunDemo={handleRunDemo}
           />
@@ -55,7 +91,7 @@ const MainAppContent = () => {
         {activeTab === "cases" && (
           <div className="space-y-6">
             <Dashboard
-              onNavigate={(tab) => setActiveTab(tab)}
+              onNavigate={(tab) => navigateTo(tab)}
               onSelectCase={handleSelectCase}
               onRunDemo={handleRunDemo}
             />
@@ -63,26 +99,29 @@ const MainAppContent = () => {
         )}
 
         {activeTab === "new-assessment" && (
-          <NewAssessment onCompleteAssessment={handleCompleteAssessment} />
+          <NewAssessment
+            onCompleteAssessment={handleCompleteAssessment}
+            onBack={handleBack}
+          />
         )}
 
         {activeTab === "assessment-result" && (
           <AssessmentResult
             activeCase={activeCase}
-            onBackToDashboard={() => setActiveTab("dashboard")}
+            onBackToDashboard={handleBack}
           />
         )}
 
         {activeTab === "case-details" && (
           <CaseDetails
             caseData={activeCase}
-            onBack={() => setActiveTab("dashboard")}
+            onBack={handleBack}
           />
         )}
 
-        {activeTab === "analytics" && <Analytics />}
+        {activeTab === "analytics" && <Analytics onBack={handleBack} />}
 
-        {activeTab === "settings" && <Settings />}
+        {activeTab === "settings" && <Settings onBack={handleBack} />}
       </main>
 
       <footer className="bg-slate-900 text-slate-400 text-[11px] py-4 border-t border-slate-800">
@@ -108,3 +147,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

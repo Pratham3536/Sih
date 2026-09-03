@@ -1,38 +1,71 @@
 /**
- * API Gateway Client prepared for FastAPI Backend Integration
+ * Unified API Client for NHAA 14566 AI Assessment System
  * 
- * ARCHITECTURE NOTE FOR SIH EVALUATION:
- * React Frontend ──► api.js ──► FastAPI Backend ──► Hugging Face / Whisper / Librosa ──► PostgreSQL
+ * ARCHITECTURE:
+ * React Frontend ──► api.js ──► Express Backend Gateway ──► MongoDB / MySQL
+ *                                                       └──► Hugging Face / Whisper / Librosa
  * 
- * In Demo Mode, if the FastAPI backend is unreachable or disabled, this service
- * gracefully falls back to local real-time analytical mock calculation routines.
+ * Auto-fallback mode ensures zero downtime during presentations.
  */
 
-const FASTAPI_BASE_URL = import.meta.env.VITE_FASTAPI_URL || "http://localhost:8000/api";
-const IS_OFFLINE_DEMO = true; // Toggle true to guarantee seamless offline demo presentation
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export const apiCall = async (endpoint, method = "GET", body = null) => {
-  if (IS_OFFLINE_DEMO) {
-    // Simulated network delay for presentation realism (300ms)
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return { isMock: true, status: 200 };
-  }
-
   try {
+    const token = localStorage.getItem("nhaa_jwt_token");
     const options = {
       method,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("nhaa_jwt_token") || "mock-jwt-token"}`
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
       }
     };
     if (body) options.body = JSON.stringify(body);
 
-    const response = await fetch(`${FASTAPI_BASE_URL}${endpoint}`, options);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || `HTTP error! Status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
-    console.warn(`[API Layer Warning] FastAPI backend endpoint ${endpoint} unavailable. Falling back to local model computation.`, error);
+    // Graceful offline fallback
+    console.warn(`[API Layer] Backend call to ${endpoint} unavailable (${error.message}). Using local engine fallback.`);
     return { isMock: true, fallback: true, error: error.message };
   }
+};
+
+// Database specific helpers
+export const testMongoConnection = async (mongoUri) => {
+  return await apiCall("/system/connect-mongo", "POST", { mongoUri });
+};
+
+export const getSystemHealth = async () => {
+  return await apiCall("/system/status", "GET");
+};
+
+export const fetchCasesFromBackend = async () => {
+  return await apiCall("/cases", "GET");
+};
+
+export const saveCaseToBackend = async (caseData) => {
+  return await apiCall("/cases", "POST", caseData);
+};
+
+export const updateCaseReviewOnBackend = async (caseId, reviewPayload) => {
+  return await apiCall(`/cases/${caseId}/review`, "PATCH", reviewPayload);
+};
+
+export const loginViaBackend = async (email, password, roleId) => {
+  return await apiCall("/auth/login", "POST", { email, password, roleId });
 };

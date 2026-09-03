@@ -1,8 +1,8 @@
 import React from "react";
-import { BarChart3, PieChart, Languages, Mic, FileText, TrendingUp, ShieldAlert } from "lucide-react";
+import { BarChart3, PieChart, Languages, Mic, FileText, TrendingUp, ShieldAlert, ArrowLeft } from "lucide-react";
 import { useCases } from "../context/CaseContext";
 
-export const Analytics = () => {
+export const Analytics = ({ onBack }) => {
   const { cases } = useCases();
 
   const total = cases.length;
@@ -23,6 +23,15 @@ export const Analytics = () => {
       {/* Header */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs flex items-center justify-between">
         <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 mb-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Dashboard</span>
+            </button>
+          )}
           <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
             System Analytics & Risk Insights
           </h1>

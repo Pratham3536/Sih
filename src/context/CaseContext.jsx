@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { INITIAL_CASES, DEMO_CASE } from "../data/mockData";
+import { fetchCasesFromBackend, saveCaseToBackend, updateCaseReviewOnBackend } from "../services/api";
 
 const CaseContext = createContext(null);
 
@@ -10,13 +11,29 @@ export const CaseProvider = ({ children }) => {
   });
 
   const [activeCase, setActiveCase] = useState(DEMO_CASE);
+  const [dbStatus, setDbStatus] = useState({ connected: false, source: "Local Storage" });
+
+  // On mount, sync with MongoDB backend if available
+  useEffect(() => {
+    let isMounted = true;
+    const syncFromDB = async () => {
+      const res = await fetchCasesFromBackend();
+      if (isMounted && res && res.success && res.cases && res.cases.length > 0) {
+        setCases(res.cases);
+        setDbStatus({ connected: true, source: res.source || "MongoDB Atlas" });
+        localStorage.setItem("nhaa_cases", JSON.stringify(res.cases));
+      }
+    };
+    syncFromDB();
+    return () => { isMounted = false; };
+  }, []);
 
   const saveCasesToStorage = (updatedCases) => {
     setCases(updatedCases);
     localStorage.setItem("nhaa_cases", JSON.stringify(updatedCases));
   };
 
-  const addCase = (newCaseData) => {
+  const addCase = async (newCaseData) => {
     const caseId = `NHAA-2026-${String(cases.length + 1).padStart(3, "0")}`;
     const fullCase = {
       id: caseId,
@@ -37,6 +54,9 @@ export const CaseProvider = ({ children }) => {
       ...newCaseData
     };
 
+    // Save to MongoDB Backend
+    saveCaseToBackend(fullCase).catch((e) => console.warn("Backend save skipped:", e));
+
     const updated = [fullCase, ...cases];
     saveCasesToStorage(updated);
     setActiveCase(fullCase);
@@ -44,6 +64,11 @@ export const CaseProvider = ({ children }) => {
   };
 
   const updateCaseReview = (caseId, { action, overriddenRisk, notes, userName }) => {
+    // Notify MongoDB backend
+    updateCaseReviewOnBackend(caseId, { action, overriddenRisk, notes, userName }).catch((e) =>
+      console.warn("Backend review update skipped:", e)
+    );
+
     const updated = cases.map((c) => {
       if (c.id === caseId) {
         const isOverride = action === "override" && overriddenRisk && overriddenRisk !== c.riskLevel;
@@ -102,7 +127,8 @@ export const CaseProvider = ({ children }) => {
         addCase,
         updateCaseReview,
         loadDemoCase,
-        stats
+        stats,
+        dbStatus
       }}
     >
       {children}
