@@ -7,8 +7,15 @@ import { requestLogger } from "./middlewares/requestLogger.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js";
 import apiRoutes from "./routes/index.js";
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Load Environment Configuration
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+dotenv.config(); // fallback to root .env if present
 
 const app = express();
 const PORT = process.env.PORT || 5000;
